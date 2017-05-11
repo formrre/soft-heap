@@ -1,0 +1,22 @@
+name:                SoftHeap
+version:             0.1.0.0
+synopsis:	     Safe Mutable Soft Heaps, using phantom types
+description:         
+        Safe Mutable Soft Heaps, implemented as described in SOFT HEAPS SIMPLIFIED by HAIM KAPLAN, ROBERT E. TARJAN, AND URI ZWICK, track corrutpion rate using phantom parameters.
+        TODO track size statically so we don't delete out of empty heap
+homepage:            https://github.com/githubuser/SoftHeap#readme
+license:             BSD3
+author:              Timotej Tomandl
+maintainer:          tomandltimotej@gmail.com
+copyright:           2017 Timotej Tomandl
+category:            Algorithm
+
+dependencies:
+        - base >= 4.8 && < 5
+
+library:
+  source-dirs:      src
+  exposed-modules:     
+        Data.SoftHeap
+        Data.SoftHeap.SHselect
+  other-modules:       Data.Natural,Data.PossiblyInfinite,Data.SoftHeap.SHNode
