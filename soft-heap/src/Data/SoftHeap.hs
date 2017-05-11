@@ -42,8 +42,7 @@ findMin (SoftHeap _ nRef)=do
     node<-readSTRef nRef
     N.findMin node
 
---this melds 2 Soft Heaps this is highly unsafe tough
---we should get a bracket-like function
+--this melds 2 Soft Heaps; this is highly unsafe tough
 meld' :: forall k e s t. (Ord k)=>SoftHeap s k e t->SoftHeap s k e t->ST s (SoftHeap s k e t)
 meld' (SoftHeap t0 n0) (SoftHeap t1 n1)=assert (t0==t1) $ do
     newRoot<-N.meld t0 n0 n1
