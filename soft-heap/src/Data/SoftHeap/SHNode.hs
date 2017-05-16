@@ -189,7 +189,7 @@ isNullST s=do
     if(isNull n) then return True else return False
 
 fill :: forall k e s. (Ord k)=>PossiblyInfinite Natural -> Node s k e -> ST s ()
-fill _ NullNode=return () --just in case
+fill _ NullNode=return ()
 fill t x@(Node _ k _ l r _)=do
     lNode<-readSTRef l
     lKey<-key lNode
@@ -273,7 +273,6 @@ reorder k h=do
     keySwap hIn
 
 --note Eq on STRef does sameMutVar#; which does MO_EQ which gets translated to .cmm pointer equality
---eliminate rewrapping
 deleteMin :: forall k e s. (Ord k) => PossiblyInfinite Natural -> STRef s (Node s k e) -> ST s (Node s k e)
 deleteMin t h=do
     hIn<-readSTRef h
