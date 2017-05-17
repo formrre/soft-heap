@@ -233,8 +233,8 @@ meldableInsert t x h=do
         then keySwap h >>=setNext x >> return x
         else link t x h >>=(\l -> (next h>>=rankSwap)>>=(meldableInsert t l))
 
---eliminate rewrapping please!!!!
-meldableMeld :: forall k e s. (Ord k) =>PossiblyInfinite Natural -> STRef s (Node s k e) ->STRef s (Node s k e)->ST s (Node s k e)
+--h1 becomes unusable
+meldableMeld :: forall k e s. (Ord k) => PossiblyInfinite Natural -> STRef s (Node s k e) -> STRef s (Node s k e)->ST s (Node s k e)
 meldableMeld t h1 h2=do
     h1In<-readSTRef h1
     h2In<-readSTRef h2
@@ -244,8 +244,8 @@ meldableMeld t h1 h2=do
         then swap h1 h2
         else return ()
     if isNull h2In
-            then return h1In
-            else (next h1In >>= rankSwap) >>= newSTRef >>= (\res-> meldableMeld t res h2) >>= meldableInsert t h1In
+        then return h1In
+        else next h1In >>= rankSwap >>= writeSTRef h1 >> meldableMeld t h1 h2 >>= meldableInsert t h1In
 
 --makes its 2 arguments unusable
 meld :: forall k e s. (Ord k) =>PossiblyInfinite Natural -> STRef s (Node s k e) -> STRef s (Node s k e) -> ST s (Node s k e)
