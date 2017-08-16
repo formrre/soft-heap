@@ -188,7 +188,7 @@ defill t x@(Node _ _ rk _ _ _)=do
     if(irk>t && (modNat r 2)==0 && (isNull lf))then (fill t x) else return ()
     return ()
 
--- |auxilliary function yo check if an Item is a NullItem
+-- |auxilliary function to check if an Item is a NullItem
 isNullSHItem :: forall k e s. (Ord k) => SHItem s k e -> Bool
 isNullSHItem NullSHItem = True
 isNullSHItem _ = False
