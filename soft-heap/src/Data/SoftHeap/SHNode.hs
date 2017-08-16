@@ -43,7 +43,7 @@ iNextRef :: forall k e s. (Ord k) => SHItem s k e ->STRef s (SHItem s k e)
 iNextRef NullSHItem =undefined
 iNextRef (SHItem ref _ _)=ref
 
---|sets the next Item of to the given Item
+-- |sets the next Item of to the given Item
 setINext :: forall k e s. (Ord k) => SHItem s k e -> SHItem s k e -> ST s ()
 setINext (SHItem ref _ _) toSet = writeSTRef ref toSet
 setINext NullSHItem _ = undefined
@@ -110,7 +110,7 @@ makeRoot it@(SHItem iN k _) = do
     let newNode=Node itRefNode keyRefNode rkRefNode leftRefNode rightRefNode nextRefNode
     return newNode
 
---| link creates a new Node which is then double even filled
+-- |link creates a new Node which is then double even filled
 link :: forall k e s. (Ord k) => PossiblyInfinite Natural->Node s k e -> Node s k e -> ST s (Node s k e)
 link t x@NullNode y = do
     setRef<-newSTRef NullSHItem
@@ -134,11 +134,11 @@ link t x@(Node _ _ rk _ _ _) y = do
     defill t z
     return z
 
---|creates new root node
+-- |creates new root node
 makeHeapNode :: forall k e s. (Ord k) => Node s k e
 makeHeapNode=NullNode
 
---|swaps the items on the item list of the root to findable order
+-- |swaps the items on the item list of the root to findable order
 keySwap :: forall k e s. (Ord k) => Node s k e -> ST s (Node s k e)
 keySwap h=do
     x<-next h
@@ -152,7 +152,7 @@ keySwap h=do
             setNext x h
             return x
 
---|swaps the nodes on the root list to meldable order and returns the Node of the new root
+-- |swaps the nodes on the root list to meldable order and returns the Node of the new root
 rankSwap :: forall k e s. (Ord k) => Node s k e -> ST s (Node s k e)
 rankSwap h=do
     x<-next h
@@ -166,17 +166,17 @@ rankSwap h=do
             setNext x h
             return x
 
---|returns the tuple (current minimum cost,item of such minimum current cost)
+-- |returns the tuple (current minimum cost,item of such minimum current cost)
 findMin :: forall k e s. (Ord k) => Node s k e -> ST s (PossiblyInfinite k,SHItem s k e)
 findMin h = key h >>=(\k->(set h >>= iNext)>>=(return . ((,) k)))
 
---|predicate which checks if given Node is a NullNode
+-- |predicate which checks if given Node is a NullNode
 isNull :: forall k e s. Node s k e -> Bool
 isNull NullNode = True
 isNull _ = False
 
---|fill a given Node once or twice; if we know the t
--- twice only if rank(node) is even and has at least one child to be filled in from after the first filling
+-- |fill a given Node once or twice; if we know the t
+-- twice only if rank(node) is even and has at least one child to be filled in from after the first filling, and is above the level t
 -- this is where the corruption comes from i.e. having multiple items in 1 node
 -- analysis of this operation comes from the section 4. of the paper
 --
@@ -189,32 +189,32 @@ defill t x@(Node _ _ rk _ _ _)=do
     if(irk>t && (modNat r 2)==0 && (isNull lf))then (fill t x) else return ()
     return ()
 
---|auxilliary function yo check if an Item is a NullItem
+-- |auxilliary function yo check if an Item is a NullItem
 isNullSHItem :: forall k e s. (Ord k) => SHItem s k e -> Bool
 isNullSHItem NullSHItem = True
 isNullSHItem _ = False
 
---|function which takes a boolean value and if the predicate is true returns the firstfirst monadic arguments
+-- |function which takes a boolean value and if the predicate is true returns the firstfirst monadic arguments
 whenElse :: (Monad m)=>Bool -> m () -> m () -> m ()
 whenElse p f s=if p then f else s
 
---|same as when else but the Boolean value is instead taken from the context of the ST monad
+-- |same as whenElse but the Boolean value is instead taken from the context of the ST monad
 whenElseST :: ST s Bool -> ST s () -> ST s () -> ST s ()
 whenElseST p f s=do
     b<-p
     whenElse b f s
 
---|check whether a certain action returns the NullNode
+-- |check whether a certain action returns the NullNode
 isNullST :: forall k e s. (Ord k) => ST s (Node s k e)->ST s Bool
 isNullST s=do
     n<-s
     if(isNull n) then return True else return False
 
---|crucial operation of the whole heap
+-- |crucial operation of the whole heap
 -- fills the given Node, t is passed cause  the function can call defill
 -- filling first fixes the order of children
 -- then it catenates the item list of the left child to the node and procedes to defill the left child if it's not a leaf
-fill :: forall k e s. (Ord k)=>PossiblyInfinite Natural -> Node s k e -> ST s ()fill _ NullNode=return ()
+fill :: forall k e s. (Ord k)=>PossiblyInfinite Natural -> Node s k e -> ST s ()
 fill _ NullNode=return ()
 fill t x@(Node _ k _ l r _)=do
     lNode<-readSTRef l
@@ -244,7 +244,7 @@ fill t x@(Node _ k _ l r _)=do
             z<-left y
             return z
 
---| helper function to swap 2 references
+-- |helper function to swap 2 references
 swap :: STRef s a -> STRef s a -> ST s ()
 swap x y=do
     vx<-readSTRef x
@@ -252,7 +252,7 @@ swap x y=do
     writeSTRef x vy
     writeSTRef y vx
 
---| meldableInsert checks if rank of the node x is smaller then the one of the first root; if yes we make x the new root
+-- |meldableInsert checks if rank of the node x is smaller then the one of the first root; if yes we make x the new root
 --  if not we link the first root and the new node together
 --  and recurse by inserting the new node to the next root until the first 2 roots obey the rank order
 meldableInsert :: forall k e s. (Ord k) =>PossiblyInfinite Natural -> Node s k e->Node s k e->ST s (Node s k e)
@@ -263,7 +263,7 @@ meldableInsert t x h=do
         then keySwap h >>=setNext x >> return x
         else link t x h >>=(\l -> (next h>>=rankSwap)>>=(meldableInsert t l))
 
---| meldableMeld orders its inputs by rank i.e. h1 is of smaller rank
+-- |meldableMeld orders its inputs by rank i.e. h1 is of smaller rank
 --  and procedes with melding (by means of meldableMeld) the next root into h2
 --  then it meldableInserts the h1 to the resulting root list
 --  h1 becomes unusable
@@ -280,7 +280,7 @@ meldableMeld t h1 h2=do
         then return h1In
         else next h1In >>= rankSwap >>= writeSTRef h1 >> meldableMeld t h1 h2 >>= meldableInsert t h1In
 
---| meld meldableMelds the 2 heaps in the meldable order and then switches into findable order
+-- |meld meldableMelds the 2 heaps in the meldable order and then switches into findable order
 --  makes its 2 arguments unusable
 meld :: forall k e s. (Ord k) =>PossiblyInfinite Natural -> STRef s (Node s k e) -> STRef s (Node s k e) -> ST s (Node s k e)
 meld t h1 h2=do
@@ -292,7 +292,7 @@ meld t h1 h2=do
     writeSTRef h2 rsh2
     meldableMeld t h1 h2 >>= keySwap
 
---| insert is a meldableInsert in the meldableOrder and then switch to the findable order
+-- |insert is a meldableInsert in the meldableOrder and then switch to the findable order
 insert :: forall k e s. (Ord k) => PossiblyInfinite Natural -> SHItem s k e -> Node s k e -> ST s (Node s k e)
 insert t e h= makeRoot e >>= (\n->rankSwap h>>=meldableInsert t n) >>= keySwap
 
