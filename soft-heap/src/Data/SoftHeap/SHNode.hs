@@ -179,7 +179,6 @@ isNull _ = False
 -- twice only if rank(node) is even and has at least one child to be filled in from after the first filling, and is above the level t
 -- this is where the corruption comes from i.e. having multiple items in 1 node
 -- analysis of this operation comes from the section 4. of the paper
---
 defill :: (Ord k)=>PossiblyInfinite Natural -> Node s k e -> ST s ()
 defill _ NullNode=undefined
 defill t x@(Node _ _ rk _ _ _)=do
