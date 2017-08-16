@@ -13,6 +13,7 @@ import Data.Natural
 import Control.Monad.ST
 import Control.Exception.Base(assert)
 
+
 data SoftHeap s k e (t::Natural) where 
     SoftHeap :: (Ord k)=>PossiblyInfinite Natural -> STRef s (Node s k e) -> SoftHeap s k e t
 
