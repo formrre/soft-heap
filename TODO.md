@@ -7,3 +7,4 @@
 * write Soft Heap selection algorithm
 * write tests
 * write examples
+* make meld nicer using linear types
