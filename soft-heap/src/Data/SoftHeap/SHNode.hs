@@ -138,7 +138,7 @@ link t x@(Node _ _ rk _ _ _) y = do
 makeHeapNode :: forall k e s. (Ord k) => Node s k e
 makeHeapNode=NullNode
 
--- |swaps the items on the item list of the root to findable order
+-- |swaps the node on the root list of to findable order and returns new root
 keySwap :: forall k e s. (Ord k) => Node s k e -> ST s (Node s k e)
 keySwap h=do
     x<-next h
