@@ -2,11 +2,13 @@
 module Data.Natural(Natural(..),modNat,zero,one,two) where
 
 data Natural=Zero | Succ Natural deriving(Ord,Eq)
+
 zero :: Natural
 zero=Zero
 
 one :: Natural
 one=Succ Zero
+
 two :: Natural
 two=Succ one
 

@@ -4,7 +4,9 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ExplicitForAll #-}
+
 module Data.SoftHeap(findMin,insert,makeHeap,deleteMin,newSHItem,meld,SHItem(),SoftHeap(),PossiblyInfinite(..),SNat(..),Natural(..),SHItem',SoftHeap',insert',findMin',meld',deleteMin') where
+
 import qualified Data.SoftHeap.SHNode as N
 import Data.SoftHeap.SHNode hiding(insert,meld,findMin,deleteMin)
 import Data.STRef
@@ -13,25 +15,24 @@ import Data.Natural
 import Control.Monad.ST
 import Control.Exception.Base(assert)
 
-
-data SoftHeap s k e (t::Natural) where 
-    SoftHeap :: (Ord k)=>PossiblyInfinite Natural -> STRef s (Node s k e) -> SoftHeap s k e t
+data SoftHeap s k e (t::PossiblyInfinite Natural) where 
+    SoftHeap :: (Ord k)=> PossiblyInfinite Word -> STRef s (Node s k e) -> SoftHeap s k e t
 
 data SNat (n::Natural) where
     SZero :: SNat Zero
     SSucc :: SNat n -> SNat (Succ n)
 
-toNat :: SNat n -> Natural
-toNat SZero=Zero
-toNat (SSucc n)=Succ (toNat n)
+toWord :: SNat n -> Word
+toWord SZero=0
+toWord (SSucc n)=1+(toWord n)
 
-makeHeap :: forall k e s t. (Ord k) => SNat t-> ST s (SoftHeap s k e t)
+makeHeap :: forall k e s t. (Ord k) => SNat t-> ST s (SoftHeap s k e (Finite t))
 makeHeap t=do
     ref<-makeHeap' undefined
-    let val=toNat t
+    let val=toWord t
     return (SoftHeap (Finite val) ref)
 
-makeHeap' :: (Ord k)=>k -> ST s (STRef s (Node s k e))
+makeHeap' :: (Ord k)=> k -> ST s (STRef s (Node s k e))
 makeHeap' _=newSTRef makeHeapNode
 
 insert :: forall k e s t. (Ord k)=>SoftHeap s k e t->k->e->ST s ()
@@ -68,9 +69,9 @@ deleteMin (SoftHeap t n)=do
     writeSTRef n newRoot
     return ()
 
-type SoftHeap' s k (t::Natural)=SoftHeap s k () t
-type SHItem' s k=SHItem s k ()
 
+type SoftHeap' s k (t::PossiblyInfinite Natural)=SoftHeap s k () t
+type SHItem' s k=SHItem s k ()
 
 insert' :: forall k s t. (Ord k)=>SoftHeap' s k t->k->ST s ()
 insert' h k=insert h k ()

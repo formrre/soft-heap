@@ -13,7 +13,8 @@ import Data.Ord
 import Data.Eq
 import Data.Bool
 import Control.Monad
-import Prelude((+),undefined,(.))
+import Data.Word
+import Prelude((+),undefined,(.),Integral(..))
 
 -- |type of items in the SoftHeap
 data SHItem s k e where
@@ -48,9 +49,8 @@ setINext :: forall k e s. (Ord k) => SHItem s k e -> SHItem s k e -> ST s ()
 setINext (SHItem ref _ _) toSet = writeSTRef ref toSet
 setINext NullSHItem _ = undefined
 
--- make rank a Word and make Natural alias for Word for the sake of efficiency
 data Node s k e where
-    Node :: (Ord k) => STRef s (SHItem s k e) -> STRef s (PossiblyInfinite k) -> STRef s (PossiblyInfinite Natural) -> STRef s (Node s k e) -> STRef s (Node s k e) -> STRef s (Node s k e) -> Node s k e
+    Node :: (Ord k) => STRef s (SHItem s k e) -> STRef s (PossiblyInfinite k) -> STRef s (PossiblyInfinite Word) -> STRef s (Node s k e) -> STRef s (Node s k e) -> STRef s (Node s k e) -> Node s k e
     NullNode :: (Ord k) => Node s k e
 
 set :: forall k e s. (Ord k) => Node s k e ->ST s (SHItem s k e)
@@ -61,7 +61,7 @@ key :: forall k e s. (Ord k) => Node s k e -> ST s (PossiblyInfinite k)
 key NullNode = return Infinite
 key (Node _ k _ _ _ _)=readSTRef k
 
-rank :: forall k e s. (Ord k) => Node s k e -> ST s (PossiblyInfinite Natural)
+rank :: forall k e s. (Ord k) => Node s k e -> ST s (PossiblyInfinite Word)
 rank NullNode = return Infinite
 rank (Node _ _ rk _ _ _)=readSTRef rk
 
@@ -103,7 +103,7 @@ makeRoot it@(SHItem iN k _) = do
     writeSTRef iN it
     keyRefNode<-newSTRef k
     itRefNode<-newSTRef it
-    rkRefNode<-newSTRef (Finite Zero)
+    rkRefNode<-newSTRef (Finite 0)
     leftRefNode<-newSTRef NullNode
     rightRefNode<-newSTRef NullNode
     nextRefNode<-newSTRef NullNode
@@ -111,7 +111,7 @@ makeRoot it@(SHItem iN k _) = do
     return newNode
 
 -- |link creates a new Node which is then double even filled
-link :: forall k e s. (Ord k) => PossiblyInfinite Natural->Node s k e -> Node s k e -> ST s (Node s k e)
+link :: forall k e s. (Ord k) => PossiblyInfinite Word -> Node s k e -> Node s k e -> ST s (Node s k e)
 link t x@NullNode y = do
     setRef<-newSTRef NullSHItem
     rkRef<-newSTRef Infinite
@@ -179,13 +179,13 @@ isNull _ = False
 -- twice only if rank(node) is even and has at least one child to be filled in from after the first filling, and is above the level t
 -- this is where the corruption comes from i.e. having multiple items in 1 node
 -- analysis of this operation comes from the section 4. of the paper
-defill :: (Ord k)=>PossiblyInfinite Natural -> Node s k e -> ST s ()
+defill :: (Ord k)=>PossiblyInfinite Word -> Node s k e -> ST s ()
 defill _ NullNode=undefined
 defill t x@(Node _ _ rk _ _ _)=do
     fill t x
     irk@(Finite r)<-readSTRef rk
     lf<-left x
-    if(irk>t && (modNat r 2)==0 && (isNull lf))then (fill t x) else return ()
+    if(irk>t && (mod r 2)==0 && (isNull lf))then (fill t x) else return ()
     return ()
 
 -- |auxilliary function to check if an Item is a NullItem
@@ -213,7 +213,7 @@ isNullST s=do
 -- fills the given Node, t is passed cause  the function can call defill
 -- filling first fixes the order of children
 -- then it catenates the item list of the left child to the node and procedes to defill the left child if it's not a leaf
-fill :: forall k e s. (Ord k)=>PossiblyInfinite Natural -> Node s k e -> ST s ()
+fill :: forall k e s. (Ord k)=>PossiblyInfinite Word -> Node s k e -> ST s ()
 fill _ NullNode=return ()
 fill t x@(Node _ k _ l r _)=do
     lNode<-readSTRef l
@@ -254,7 +254,7 @@ swap x y=do
 -- |meldableInsert checks if rank of the node x is smaller then the one of the first root; if yes we make x the new root
 --  if not we link the first root and the new node together
 --  and recurse by inserting the new node to the next root until the first 2 roots obey the rank order
-meldableInsert :: forall k e s. (Ord k) =>PossiblyInfinite Natural -> Node s k e->Node s k e->ST s (Node s k e)
+meldableInsert :: forall k e s. (Ord k) => PossiblyInfinite Word -> Node s k e->Node s k e->ST s (Node s k e)
 meldableInsert t x h=do
     rkX<-rank x
     rkH<-rank h
@@ -266,7 +266,7 @@ meldableInsert t x h=do
 --  and procedes with melding (by means of meldableMeld) the next root into h2
 --  then it meldableInserts the h1 to the resulting root list
 --  h1 becomes unusable
-meldableMeld :: forall k e s. (Ord k) => PossiblyInfinite Natural -> STRef s (Node s k e) -> STRef s (Node s k e)->ST s (Node s k e)
+meldableMeld :: forall k e s. (Ord k) => PossiblyInfinite Word -> STRef s (Node s k e) -> STRef s (Node s k e)->ST s (Node s k e)
 meldableMeld t h1 h2=do
     h1In<-readSTRef h1
     h2In<-readSTRef h2
@@ -281,7 +281,7 @@ meldableMeld t h1 h2=do
 
 -- |meld meldableMelds the 2 heaps in the meldable order and then switches into findable order
 --  makes its 2 arguments unusable
-meld :: forall k e s. (Ord k) =>PossiblyInfinite Natural -> STRef s (Node s k e) -> STRef s (Node s k e) -> ST s (Node s k e)
+meld :: forall k e s. (Ord k) =>PossiblyInfinite Word -> STRef s (Node s k e) -> STRef s (Node s k e) -> ST s (Node s k e)
 meld t h1 h2=do
     h1In<-readSTRef h1
     h2In<-readSTRef h2
@@ -292,10 +292,10 @@ meld t h1 h2=do
     meldableMeld t h1 h2 >>= keySwap
 
 -- |insert is a meldableInsert in the meldableOrder and then switch to the findable order
-insert :: forall k e s. (Ord k) => PossiblyInfinite Natural -> SHItem s k e -> Node s k e -> ST s (Node s k e)
+insert :: forall k e s. (Ord k) => PossiblyInfinite Word -> SHItem s k e -> Node s k e -> ST s (Node s k e)
 insert t e h= makeRoot e >>= (\n->rankSwap h>>=meldableInsert t n) >>= keySwap
 
-reorder :: forall k e s. (Ord k) => PossiblyInfinite Natural -> STRef s (Node s k e) -> ST s (Node s k e)
+reorder :: forall k e s. (Ord k) => PossiblyInfinite Word -> STRef s (Node s k e) -> ST s (Node s k e)
 reorder k h=do
     hIn<-readSTRef h
     n<-next hIn
@@ -307,7 +307,7 @@ reorder k h=do
     keySwap hIn
 
 --note Eq on STRef does sameMutVar#; which does MO_EQ which gets translated to .cmm pointer equality
-deleteMin :: forall k e s. (Ord k) => PossiblyInfinite Natural -> STRef s (Node s k e) -> ST s (Node s k e)
+deleteMin :: forall k e s. (Ord k) => PossiblyInfinite Word -> STRef s (Node s k e) -> ST s (Node s k e)
 deleteMin t h=do
     hIn<-readSTRef h
     setH<-set hIn

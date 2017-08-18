@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Data.SoftHeap.SHselect(shSelect) where
 import Data.SoftHeap
 import Control.Monad.ST
@@ -40,5 +41,6 @@ heapify' :: (Ord k) => [k] -> SoftHeap' s k t -> ST s ()
 heapify' [] h=return ()
 heapify' (x:xs) h=insert' h x>>heapify' xs h
 
-heapify :: (Ord k) => SNat t -> [k] -> ST s (SoftHeap' s k t)
+
+heapify :: (Ord k) => SNat t -> [k] -> ST s (SoftHeap' s k (Finite t))
 heapify t l=makeHeap t>>=(\h->heapify' l h>>return h)
