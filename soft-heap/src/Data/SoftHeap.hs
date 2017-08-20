@@ -14,7 +14,6 @@ import Data.SoftHeap.SHNode hiding(insert,meld,findMin,deleteMin)
 import Data.STRef
 import Data.PossiblyInfinite
 import Data.Natural
-import Data.Ratio
 import Control.Monad.ST
 import Control.Exception.Base(assert)
 import Data.Bits
