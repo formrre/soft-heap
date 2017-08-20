@@ -88,14 +88,14 @@ logBase2Floor x = fromIntegral $ finiteBitSize x - 1 -countLeadingZeros x
 
 makeHeap' _=newSTRef makeHeapNode
 
--- |inserts a new element with key into the heap
-insert :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->k->e->ST s ()
+-- |inserts a new element with key into the heap and returns the newly created item for use with arbitrary deletions
+insert :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->k->e->ST s (SHItem s k e)
 insert (SoftHeap t nRef) k e=do
     it<-newSHItem k e
     n<-readSTRef nRef
     newN<-N.insert t it n
     writeSTRef nRef newN
-    return ()
+    return it
 
 -- |returns the tuple (current minimum cost,item of the current minimum cost)
 findMin :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->ST s (PossiblyInfinite k,SHItem s k e)
@@ -133,7 +133,7 @@ type SoftHeap' s k (m::Natural) (n::PossiblyInfinite Natural)=SoftHeap s k () m 
 type SHItem' s k=SHItem s k ()
 
 -- |insertion with keys only
-insert' :: forall k s t m n. (Ord k)=>SoftHeap' s k m n->k->ST s ()
+insert' :: forall k s t m n. (Ord k)=>SoftHeap' s k m n->k->ST s (SHItem' s k)
 insert' h k=insert h k ()
 
 -- |find minimum with keys only
