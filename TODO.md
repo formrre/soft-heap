@@ -1,4 +1,5 @@
 # TODO
+* write comments for minimum deletion and the helper function reorder
 * add arbitrary deletion
 * track size, so we can not delete from an empty heap
 * play around with strictness
