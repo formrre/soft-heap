@@ -19,4 +19,4 @@ library:
   exposed-modules:     
         Data.SoftHeap
         Data.SoftHeap.SHselect
-  other-modules:       Data.Natural,Data.Ratio,Data.PossiblyInfinite,Data.SoftHeap.SHNode
+  other-modules:       Data.Natural,Data.PossiblyInfinite,Data.SoftHeap.SHNode

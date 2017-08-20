@@ -23,5 +23,5 @@ library
   exposed-modules:
       Data.SoftHeap Data.SoftHeap.SHselect
   other-modules:
-      Data.Natural,Data.Ratio,Data.PossiblyInfinite,Data.SoftHeap.SHNode
+      Data.Natural,Data.PossiblyInfinite,Data.SoftHeap.SHNode
   default-language: Haskell2010
