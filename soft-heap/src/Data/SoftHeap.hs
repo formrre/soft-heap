@@ -6,8 +6,9 @@
 {-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
+--{-# LANGUAGE NoImplicitPrelude #-}
 
-module Data.SoftHeap(findMin,insert,makeHeap,deleteMin,newSHItem,meld,SHItem(),SoftHeap(),PossiblyInfinite(..),SNat(..),Natural(..),SHItem',SoftHeap',insert',findMin',meld',deleteMin') where
+module Data.SoftHeap(findMin,insert,makeHeap,deleteMin,newSHItem,meld,SHItem(),key,element,SoftHeap(),PossiblyInfinite(..),SNat(..),Natural(..),SHItem',SoftHeap',insert',findMin',meld',deleteMin') where
 
 import qualified Data.SoftHeap.SHNode as N
 import Data.SoftHeap.SHNode hiding(insert,meld,findMin,deleteMin)
@@ -21,6 +22,10 @@ import Data.Word
 
 data TrueT
 data FalseT
+
+-- | rename iKey key
+key :: forall k e s. (Ord k) => SHItem s k e -> PossiblyInfinite k
+key = iKey 
 
 -- |TF for type-level equality 
 type family TypeEq a b where

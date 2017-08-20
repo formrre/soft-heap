@@ -4,7 +4,7 @@
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ExplicitForAll #-}
-module Data.SoftHeap.SHNode(newSHItem,insert,makeHeapNode,meld,findMin,deleteMin,iKey,SHItem(),Node()) where
+module Data.SoftHeap.SHNode(newSHItem,insert,makeHeapNode,meld,findMin,deleteMin,iKey,element,SHItem(),Node()) where
 import Data.Natural
 import Data.PossiblyInfinite
 import Data.STRef
@@ -28,6 +28,8 @@ newSHItem k e = mdo
     itRef <- newSTRef (SHItem itRef (Finite k) e)
     readSTRef itRef
 
+element :: forall k e s. (Ord k) => SHItem s k e -> e
+element (SHItem _ _ e)=e
 
 -- |returns key of an SHItem
 iKey :: forall k e s. (Ord k) => SHItem s k e -> PossiblyInfinite k
