@@ -1,5 +1,4 @@
 # TODO
-* write proper comments
 * add arbitrary deletion
 * track size, so we can not delete from an empty heap
 * play around with strictness

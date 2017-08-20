@@ -21,26 +21,34 @@ import Data.Word
 
 data TrueT
 data FalseT
+
+-- |TF for type-level equality 
 type family TypeEq a b where
     TypeEq a a = TrueT
     TypeEq a b = FalseT
 
 --add num < denom!!!!
+
+-- |main-type of SoftHeap
 data SoftHeap s k e (epsilonNum :: Natural) (epsilonDenom :: PossiblyInfinite Natural) where 
     SoftHeap :: (Ord k,TypeEq epsilonDenom (Finite Zero) ~ FalseT)=> PossiblyInfinite Word -> STRef s (Node s k e) -> SoftHeap s k e epsilonNum epsilonDenom
 
+-- |Singleton type of naturals 
 data SNat (n::Natural) where
     SZero :: SNat Zero
     SSucc :: SNat n -> SNat (Succ n)
 
+-- |Singleton type of possibly infinite naturals
 data SNatInf (n::PossiblyInfinite Natural) where
     SNatInfNat :: SNat k -> SNatInf (Finite k)
     SNatInfInf :: SNatInf Infinite
 
+-- |converts singleton natural to Word, takes O(n) where n is the natural
 toWord :: SNat n -> Word
 toWord SZero=0
 toWord (SSucc n)=1+(toWord n)
 
+-- |constructs a heap with corruption rate m/n, where m is a natural and n is a possibly infinite natural
 makeHeap :: forall k e s m n. (Ord k,TypeEq n (Finite Zero) ~ FalseT) => SNat m -> SNatInf n -> ST s (SoftHeap s k e m n)
 makeHeap m (SNatInfNat n)=do
     ref<-makeHeap' undefined
@@ -80,6 +88,7 @@ logBase2Floor x = fromIntegral $ finiteBitSize x - 1 -countLeadingZeros x
 
 makeHeap' _=newSTRef makeHeapNode
 
+-- |inserts a new element with key into the heap
 insert :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->k->e->ST s ()
 insert (SoftHeap t nRef) k e=do
     it<-newSHItem k e
@@ -88,6 +97,7 @@ insert (SoftHeap t nRef) k e=do
     writeSTRef nRef newN
     return ()
 
+-- |returns the tuple (current minimum cost,item of the current minimum cost)
 findMin :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->ST s (PossiblyInfinite k,SHItem s k e)
 findMin (SoftHeap _ nRef)=do
     node<-readSTRef nRef
@@ -100,7 +110,7 @@ meldIn (SoftHeap t0 n0) (SoftHeap t1 n1)=assert (t0==t1) $ do
     rootRef<-newSTRef newRoot
     return (SoftHeap t0 rootRef)
 
---executes bracketH with param and melds it into first heap
+-- |evaluates it's third argument with second argument as a parameter and melds the result into first
 meld :: forall k e s m n a. (Ord k)=>SoftHeap s k e m n->a->(a->SoftHeap s k e m n)->ST s ()
 meld h1@(SoftHeap _ n) param bracketH=do
     (SoftHeap _ nodeRef)<-meldIn h1 $ bracketH param
@@ -108,6 +118,7 @@ meld h1@(SoftHeap _ n) param bracketH=do
     writeSTRef n nodeRefIn
     return ()
 
+-- |deletes the minimum Item out of a heap
 deleteMin :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->ST s ()
 deleteMin (SoftHeap t n)=do
     newRoot<-N.deleteMin t n
@@ -115,17 +126,24 @@ deleteMin (SoftHeap t n)=do
     return ()
 
 
+-- |alias for SoftHeap with keys only
 type SoftHeap' s k (m::Natural) (n::PossiblyInfinite Natural)=SoftHeap s k () m n
+
+-- |alias for SHItem with keys only
 type SHItem' s k=SHItem s k ()
 
+-- |insertion with keys only
 insert' :: forall k s t m n. (Ord k)=>SoftHeap' s k m n->k->ST s ()
 insert' h k=insert h k ()
 
+-- |find minimum with keys only
 findMin' :: forall k s t m n. (Ord k)=>SoftHeap' s k m n->ST s (PossiblyInfinite k,SHItem' s k)
 findMin' h=findMin h
 
+-- |meld with keys only
 meld' :: forall k s t a m n. (Ord k)=>SoftHeap' s k m n->a->(a->SoftHeap' s k m n)->ST s ()
 meld' h1 param bracketH=meld h1 param bracketH
 
+-- |delete minimum with keys only
 deleteMin' :: forall k s t m n. (Ord k)=>SoftHeap' s k m n->ST s ()
 deleteMin' h=deleteMin h
