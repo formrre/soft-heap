@@ -15,10 +15,16 @@ import Data.SoftHeap.SHNode hiding(insert,meld,findMin,deleteMin)
 import Data.STRef
 import Data.PossiblyInfinite
 import Data.Natural
+import Control.Monad
 import Control.Monad.ST
 import Control.Exception.Base(assert)
 import Data.Bits
 import Data.Word
+import Data.Bool
+import Data.Eq
+import Data.Ord
+import Prelude((+),(-),(*),div,rem,undefined,fromIntegral)
+import Data.Function
 
 data TrueT
 data FalseT
