@@ -4,6 +4,7 @@
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ExplicitForAll #-}
+
 module Data.SoftHeap.SHNode(newSHItem,insert,makeHeapNode,meld,findMin,deleteMin,iKey,element,SHItem(),Node()) where
 import Data.Natural
 import Data.PossiblyInfinite
