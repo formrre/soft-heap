@@ -110,9 +110,7 @@ insert (SoftHeap t nRef) k e=do
 
 -- |returns the tuple (current minimum cost,item of the current minimum cost)
 findMin :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->ST s (PossiblyInfinite k,SHItem s k e)
-findMin (SoftHeap _ nRef)=do
-    node<-readSTRef nRef
-    N.findMin node
+findMin (SoftHeap t nRef)=N.findMin t nRef
 
 --this melds 2 Soft Heaps; this is highly unsafe tough
 meldIn :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->SoftHeap s k e m n->ST s (SoftHeap s k e m n)
