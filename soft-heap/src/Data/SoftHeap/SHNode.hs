@@ -178,7 +178,7 @@ rankSwap h=do
 
 -- |returns the tuple (current minimum cost,item of such minimum current cost)
 findMin :: forall k e s. (Ord k) => PossiblyInfinite Word -> STRef s (Node s k e) -> ST s (PossiblyInfinite k,SHItem s k e)
-findMin t h = readSTRef h >>= (\hIn -> deleteMinCatchup t h >> key hIn >>=(\k->(set hIn >>= iNext)>>=(return . ((,) k))))
+findMin t h = deleteMinCatchup t h >> (readSTRef h >>= (\hIn -> key hIn >>=(\k->(set hIn >>= iNext)>>=(return . ((,) k)))))
 
 -- |predicate which checks if given Node is a NullNode
 isNull :: forall k e s. Node s k e -> Bool
