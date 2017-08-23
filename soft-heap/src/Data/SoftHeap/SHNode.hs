@@ -5,7 +5,7 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ExplicitForAll #-}
 
-module Data.SoftHeap.SHNode(newSHItem,insert,makeHeapNode,meld,findMin,deleteMin,iKey,element,SHItem(),Node()) where
+module Data.SoftHeap.SHNode(newSHItem,insert,makeHeapNode,meld,findMin,deleteMin,deleteItem,iKey,element,SHItem(),Node()) where
 import Data.Natural
 import Data.PossiblyInfinite
 import Data.STRef
@@ -19,38 +19,45 @@ import Prelude((+),undefined,(.),Integral(..))
 
 -- |type of items in the SoftHeap
 data SHItem s k e where
-    SHItem :: (Ord k) => STRef s (SHItem s k e) -> PossiblyInfinite k -> e -> SHItem s k e
+    SHItem :: (Ord k) => STRef s Bool -> STRef s (SHItem s k e) -> PossiblyInfinite k -> e -> SHItem s k e
     NullSHItem :: (Ord k) => SHItem s k e
 
 -- |creates new SHItem
 --  important for arbitrary deletions
 newSHItem :: forall k e s. (Ord k) => k -> e -> ST s (SHItem s k e)
 newSHItem k e = mdo
-    itRef <- newSTRef (SHItem itRef (Finite k) e)
+    delRef <- newSTRef False
+    itRef <- newSTRef (SHItem delRef itRef (Finite k) e)
     readSTRef itRef
 
 element :: forall k e s. (Ord k) => SHItem s k e -> e
-element (SHItem _ _ e)=e
+element (SHItem _ _ _ e)=e
 
 -- |returns key of an SHItem
 iKey :: forall k e s. (Ord k) => SHItem s k e -> PossiblyInfinite k
-iKey (SHItem _ k _)=k
+iKey (SHItem _ _ k _)=k
 iKey NullSHItem = Infinite
 
 -- |returns next SHItem on the item list
 iNext :: forall k e s. (Ord k)=>SHItem s k e -> ST s (SHItem s k e)
 iNext NullSHItem = return NullSHItem
-iNext (SHItem ref _ _)=readSTRef ref
+iNext (SHItem _ ref _ _)=readSTRef ref
 
 -- |returns the STRef in current heap referring to the next SHItem
 iNextRef :: forall k e s. (Ord k) => SHItem s k e ->STRef s (SHItem s k e)
 iNextRef NullSHItem =undefined
-iNextRef (SHItem ref _ _)=ref
+iNextRef (SHItem _ ref _ _)=ref
 
 -- |sets the next Item of to the given Item
 setINext :: forall k e s. (Ord k) => SHItem s k e -> SHItem s k e -> ST s ()
-setINext (SHItem ref _ _) toSet = writeSTRef ref toSet
+setINext (SHItem _ ref _ _) toSet = writeSTRef ref toSet
 setINext NullSHItem _ = undefined
+
+isDeleted :: forall k e s. (Ord k) => SHItem s k e -> ST s Bool
+isDeleted (SHItem delRef _ _ _)=readSTRef delRef
+
+setDeleted :: forall k e s. (Ord k) => SHItem s k e -> ST s ()
+setDeleted (SHItem delRef _ _ _)=writeSTRef delRef True
 
 data Node s k e where
     Node :: (Ord k) => STRef s (SHItem s k e) -> STRef s (PossiblyInfinite k) -> STRef s (PossiblyInfinite Word) -> STRef s (Node s k e) -> STRef s (Node s k e) -> STRef s (Node s k e) -> Node s k e
@@ -102,7 +109,7 @@ setNext NullNode _=undefined
 
 makeRoot :: forall k e s. (Ord k) => SHItem s k e -> ST s (Node s k e)
 makeRoot NullSHItem=undefined
-makeRoot it@(SHItem iN k _) = do
+makeRoot it@(SHItem _ iN k _) = do
     writeSTRef iN it
     keyRefNode<-newSTRef k
     itRefNode<-newSTRef it
@@ -310,8 +317,8 @@ reorder k h=do
     keySwap hIn
 
 --note Eq on STRef does sameMutVar#; which does MO_EQ which gets translated to .cmm pointer equality
-deleteMin :: forall k e s. (Ord k) => PossiblyInfinite Word -> STRef s (Node s k e) -> ST s (Node s k e)
-deleteMin t h=do
+deleteMin_ :: forall k e s. (Ord k) => PossiblyInfinite Word -> STRef s (Node s k e) -> ST s (Node s k e)
+deleteMin_ t h=do
     hIn<-readSTRef h
     setH<-set hIn
     let e=iNextRef setH
@@ -319,3 +326,22 @@ deleteMin t h=do
     if e/= (iNextRef eIn) 
         then (iNext eIn >>=setINext setH) >> return hIn
         else setSet hIn NullSHItem >> rank hIn >>= (\k -> (whenElseST (isNullST (left hIn)) (next hIn>>=writeSTRef h) (defill t hIn)) >> reorder k h)
+
+-- |keeps calling deleteMin_ on the heap until the minimum item is not marked as already deleted; used by both findMin and deleteMin; modifies the h passed to it
+deleteMinCatchup :: forall k e s. (Ord k) => PossiblyInfinite Word -> STRef s (Node s k e) -> ST s ()
+deleteMinCatchup t h=do
+    hIn<-readSTRef h
+    setH<-set hIn
+    let e=iNextRef setH
+    eIn<-readSTRef e
+    d<-isDeleted eIn
+    if d then ((deleteMin_ t h) >>= (writeSTRef h)) >> deleteMinCatchup t h  else return ()
+
+-- |catchup on abritrary deletions using deleteMinCatchup and then deleteMin_ once more
+deleteMin :: forall k e s. (Ord k) => PossiblyInfinite Word -> STRef s (Node s k e) -> ST s (Node s k e)
+deleteMin t h = deleteMinCatchup t h >> deleteMin_ t h
+
+-- |deletes an arbitrary item
+deleteItem :: forall k e s. (Ord k) => SHItem s k e -> ST s ()
+deleteItem NullSHItem=undefined
+deleteItem x=setDeleted x

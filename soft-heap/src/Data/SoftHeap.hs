@@ -8,7 +8,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Data.SoftHeap(findMin,insert,makeHeap,deleteMin,newSHItem,meld,SHItem(),key,element,SoftHeap(),PossiblyInfinite(..),SNat(..),Natural(..),SHItem',SoftHeap',insert',findMin',meld',deleteMin') where
+module Data.SoftHeap(findMin,insert,makeHeap,deleteMin,newSHItem,meld,SHItem(),key,element,SoftHeap(),PossiblyInfinite(..),SNat(..),Natural(..),SHItem',SoftHeap',insert',findMin',meld',deleteMin',deleteItem,deleteItem') where
 
 import qualified Data.SoftHeap.SHNode as N
 import Data.SoftHeap.SHNode hiding(insert,meld,findMin,deleteMin)
@@ -158,3 +158,6 @@ meld' h1 param bracketH=meld h1 param bracketH
 -- |delete minimum with keys only
 deleteMin' :: forall k s t m n. (Ord k)=>SoftHeap' s k m n->ST s ()
 deleteMin' h=deleteMin h
+
+deleteItem' :: forall k s t m n. (Ord k)=>SHItem' s k -> ST s ()
+deleteItem' = deleteItem 
