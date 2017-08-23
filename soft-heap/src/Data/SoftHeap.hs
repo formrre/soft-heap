@@ -6,21 +6,32 @@
 {-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
-module Data.SoftHeap(findMin,insert,makeHeap,deleteMin,newSHItem,meld,SHItem(),SoftHeap(),PossiblyInfinite(..),SNat(..),Natural(..),SHItem',SoftHeap',insert',findMin',meld',deleteMin') where
+module Data.SoftHeap(findMin,insert,makeHeap,deleteMin,newSHItem,meld,SHItem(),key,element,SoftHeap(),PossiblyInfinite(..),SNat(..),Natural(..),SHItem',SoftHeap',insert',findMin',meld',deleteMin',deleteItem,deleteItem') where
 
 import qualified Data.SoftHeap.SHNode as N
 import Data.SoftHeap.SHNode hiding(insert,meld,findMin,deleteMin)
 import Data.STRef
 import Data.PossiblyInfinite
 import Data.Natural
+import Control.Monad
 import Control.Monad.ST
 import Control.Exception.Base(assert)
 import Data.Bits
 import Data.Word
+import Data.Bool
+import Data.Eq
+import Data.Ord
+import Prelude((+),(-),(*),div,rem,undefined,fromIntegral)
+import Data.Function
 
 data TrueT
 data FalseT
+
+-- | rename iKey key
+key :: forall k e s. (Ord k) => SHItem s k e -> PossiblyInfinite k
+key = iKey 
 
 -- |TF for type-level equality 
 type family TypeEq a b where
@@ -88,20 +99,18 @@ logBase2Floor x = fromIntegral $ finiteBitSize x - 1 -countLeadingZeros x
 
 makeHeap' _=newSTRef makeHeapNode
 
--- |inserts a new element with key into the heap
-insert :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->k->e->ST s ()
+-- |inserts a new element with key into the heap and returns the newly created item for use with arbitrary deletions
+insert :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->k->e->ST s (SHItem s k e)
 insert (SoftHeap t nRef) k e=do
     it<-newSHItem k e
     n<-readSTRef nRef
     newN<-N.insert t it n
     writeSTRef nRef newN
-    return ()
+    return it
 
 -- |returns the tuple (current minimum cost,item of the current minimum cost)
 findMin :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->ST s (PossiblyInfinite k,SHItem s k e)
-findMin (SoftHeap _ nRef)=do
-    node<-readSTRef nRef
-    N.findMin node
+findMin (SoftHeap t nRef)=N.findMin t nRef
 
 --this melds 2 Soft Heaps; this is highly unsafe tough
 meldIn :: forall k e s m n. (Ord k)=>SoftHeap s k e m n->SoftHeap s k e m n->ST s (SoftHeap s k e m n)
@@ -133,7 +142,7 @@ type SoftHeap' s k (m::Natural) (n::PossiblyInfinite Natural)=SoftHeap s k () m 
 type SHItem' s k=SHItem s k ()
 
 -- |insertion with keys only
-insert' :: forall k s t m n. (Ord k)=>SoftHeap' s k m n->k->ST s ()
+insert' :: forall k s t m n. (Ord k)=>SoftHeap' s k m n->k->ST s (SHItem' s k)
 insert' h k=insert h k ()
 
 -- |find minimum with keys only
@@ -147,3 +156,6 @@ meld' h1 param bracketH=meld h1 param bracketH
 -- |delete minimum with keys only
 deleteMin' :: forall k s t m n. (Ord k)=>SoftHeap' s k m n->ST s ()
 deleteMin' h=deleteMin h
+
+deleteItem' :: forall k s t m n. (Ord k)=>SHItem' s k -> ST s ()
+deleteItem' = deleteItem 
